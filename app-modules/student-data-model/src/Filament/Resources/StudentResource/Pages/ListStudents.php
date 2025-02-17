@@ -138,6 +138,21 @@ class ListStudents extends ListRecords
                     ->query(fn (Builder $query, array $data) => $this->segmentFilter($query, $data)),
                 Filter::make('subscribed')
                     ->query(fn (Builder $query): Builder => $query->whereRelation('subscriptions.user', 'id', auth()->id())),
+                Filter::make('care_team')
+                    ->label('Care Team')
+                    ->query(
+                        function (Builder $query) {
+                            return $query
+                                ->whereRelation('careTeam', 'user_id', '=', auth()->id())
+                                ->get();
+                        }
+                    ),
+                SelectFilter::make('alerts')
+                    ->multiple()
+                    ->relationship('alerts.status', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->optionsLimit(20),
                 TernaryFilter::make('sap')
                     ->label('SAP'),
                 TernaryFilter::make('dual'),
@@ -154,15 +169,7 @@ class ListStudents extends ListRecords
                                 fn (Builder $query, $hold): Builder => $query->where('holds', 'ilike', "%{$hold}%"),
                             );
                     }),
-                Filter::make('care_team')
-                    ->label('Care Team')
-                    ->query(
-                        function (Builder $query) {
-                            return $query
-                                ->whereRelation('careTeam', 'user_id', '=', auth()->id())
-                                ->get();
-                        }
-                    ),
+
                 SelectFilter::make('tags')
                     ->label('Tags')
                     ->options(fn (): array => Tag::query()->where('type', TagType::Student)->pluck('name', 'id')->toArray())
@@ -181,7 +188,8 @@ class ListStudents extends ListRecords
                             });
                         }
                     ),
-                TernaryFilter::make('firstgen'),
+                TernaryFilter::make('firstgen')
+                    ->label('First Generation'),
             ])
             ->actions([
                 ViewAction::make()
